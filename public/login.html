@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>访问验证 · 斑马鱼文献库</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #243638; background: #eef2ef; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 20px; }
+    main { width: min(100%, 420px); padding: 32px; background: #fff; border: 1px solid #d4dfdb; border-radius: 8px; box-shadow: 0 16px 42px rgb(36 54 56 / 10%); }
+    .mark { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 20px; border-radius: 50%; background: #d8ebe7; color: #176b66; font-weight: 800; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { margin: 0 0 24px; color: #647476; line-height: 1.6; }
+    label { display: grid; gap: 8px; color: #425456; font-size: 14px; font-weight: 700; }
+    input { width: 100%; padding: 12px 13px; border: 1px solid #c9d5d2; border-radius: 6px; font: inherit; }
+    input:focus { outline: 3px solid rgb(43 137 126 / 18%); border-color: #2b897e; }
+    button { width: 100%; margin-top: 18px; padding: 12px 16px; border: 0; border-radius: 6px; background: #176b66; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .65; }
+    #message { min-height: 24px; margin: 14px 0 0; color: #b04e3e; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">ZF</div>
+    <h1>斑马鱼文献库</h1>
+    <p>这是非公开访问站点，请输入访问密码。</p>
+    <form id="loginForm">
+      <label>访问密码<input id="password" type="password" autocomplete="current-password" required></label>
+      <button id="submit" type="submit">进入数据库</button>
+      <div id="message" role="status" aria-live="polite"></div>
+    </form>
+  </main>
+  <script>
+    const form = document.querySelector("#loginForm");
+    const password = document.querySelector("#password");
+    const submit = document.querySelector("#submit");
+    const message = document.querySelector("#message");
+    const next = new URLSearchParams(location.search).get("next");
+    async function hash(value) {
+      const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+      return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      message.textContent = "正在验证...";
+      submit.disabled = true;
+      try {
+        const response = await fetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hash: await hash(password.value) }) });
+        if (!response.ok) throw new Error(response.status === 401 ? "密码不正确" : "服务端尚未完成访问配置");
+        location.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
+      } catch (error) {
+        message.textContent = error.message || "验证失败，请稍后重试";
+        submit.disabled = false;
+        password.select();
+      }
+    });
+  </script>
+</body>
+</html>

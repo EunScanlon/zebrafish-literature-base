@@ -27,6 +27,31 @@ npm start
 npm run start:public
 ```
 
+### 非公开访问
+
+站点默认要求访问密码。密码不会以明文保存：登录页在浏览器中使用 Web Crypto API 计算 SHA-256，服务端只比对 `SITE_PASSWORD_HASH`，登录成功后签发 30 天有效的签名 HttpOnly Cookie。Render 必须使用 HTTPS；不要把密码或密码哈希提交到 Git。
+
+本地生成密码哈希：
+
+```powershell
+npm run auth:hash
+```
+
+在 Render 的 Environment Variables 中填写：
+
+```text
+SITE_PASSWORD_HASH=<上一步输出的64位小写哈希>
+SITE_COOKIE_SECRET=<随机生成的长期密钥>
+```
+
+随机密钥可以用下面的命令生成：
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+添加变量后重新部署。`/api/health` 保持公开以供 Render 健康检查，首页、脚本、题录 JSON、CSV 和关于页均需要登录。
+
 ## 对外访问
 
 服务默认监听 `0.0.0.0`，因此启动后，同一局域网的设备可通过运行电脑的 IPv4 地址访问，例如 `http://192.168.1.20:4188/`。Windows 防火墙首次拦截时，请允许 Node.js 在专用网络通信；不要把个人电脑端口直接暴露到互联网。

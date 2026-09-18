@@ -12,6 +12,7 @@
     "start": "node server.mjs --skip-data-build",
     "start:public": "node server.mjs --skip-data-build",
     "check": "node scripts/check-data.mjs",
-    "test:classifier": "node scripts/test-classifier.mjs"
+    "test:classifier": "node scripts/test-classifier.mjs",
+    "auth:hash": "node scripts/hash-password.mjs"
   }
 }
