@@ -321,10 +321,19 @@ function bindEvents() {
   $("#paperDialog").addEventListener("click", event => { if (event.target === $("#paperDialog")) $("#paperDialog").close(); });
 }
 
-async function loadChunk(file) {
-  const response = await fetch(`/data/${file}`, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`HTTP ${response.status} (${file})`);
-  return response.json();
+async function loadChunk(file, fresh = false) {
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`/data/${file}`, { cache: fresh || attempt ? "no-store" : "force-cache" });
+      if (!response.ok) throw new Error(`HTTP ${response.status} (${file})`);
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastError;
 }
 
 function yieldToBrowser() {
@@ -355,7 +364,7 @@ async function init() {
       return response.json();
     });
     const files = index.paperChunks || [];
-    const firstChunk = files.length ? await loadChunk(files[0]) : [];
+    const firstChunk = files.length ? await loadChunk(files[0], true) : [];
     state.payload = { ...index, papers: firstChunk };
     state.papers = firstChunk;
     state.loadingAll = files.length > 1;
