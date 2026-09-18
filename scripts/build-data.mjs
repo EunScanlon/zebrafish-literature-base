@@ -178,6 +178,13 @@ export async function buildData() {
       evidenceLevel: toc?.status === "complete" ? 3 : record.abstract ? 2 : 1
     };
   });
+  if ((process.env.RENDER === "true" || process.env.RENDER === "1") && papers.length === 0) {
+    const existingIndex = await readJson(path.join(publicDataDir, "library-index.json"), null);
+    if (existingIndex?.paperCount > 0 && existingIndex?.paperChunks?.length) {
+      console.warn("Render source metadata is absent; preserving committed public data.");
+      return existingIndex;
+    }
+  }
   const stats = buildStats(papers, metadataPayload.importReport || {}, tocPayload.report || {});
   const termIndex = buildTermIndex(papers);
   const payload = { generatedAt: new Date().toISOString(), query: "斑马鱼", features: { titleLinks: false }, classificationSchema, taxonomy: classificationSchema.purposes, termIndex, stats, papers };
