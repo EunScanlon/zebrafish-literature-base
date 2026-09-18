@@ -14,7 +14,11 @@ const port = Number(process.env.PORT || 4188);
 const host = process.env.HOST || "0.0.0.0";
 const mime = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8", ".csv": "text/csv; charset=utf-8", ".jpg": "image/jpeg", ".png": "image/png" };
 
-if (!process.argv.includes("--skip-data-build")) {
+// Render deploys the generated public/data files from GitHub. Its source
+// metadata is intentionally excluded, so rebuilding there would overwrite
+// the published index with an empty dataset.
+const isRender = process.env.RENDER === "true" || process.env.RENDER === "1";
+if (!process.argv.includes("--skip-data-build") && !isRender) {
   await buildData();
 }
 
