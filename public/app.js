@@ -15,7 +15,8 @@ const state = {
   sort: "relevance",
   view: "papers",
   page: 1,
-  pageSize: 24
+  pageSize: 24,
+  loadingAll: false
 };
 
 const $ = selector => document.querySelector(selector);
@@ -34,13 +35,24 @@ function setOptions(select, values, firstLabel) {
   select.innerHTML = `<option value="">${firstLabel}</option>${values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
 }
 
+function updateFilterOptions() {
+  const sources = [...new Set(state.papers.map(paper => paper.source).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const languages = [...new Set(state.papers.map(paper => paper.language).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const resourceTypes = [...new Set(state.papers.map(paper => paper.resourceType || paper.database).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const years = [...new Set(state.papers.map(paper => paper.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+  setOptions($("#sourceFilter"), sources, "全部来源");
+  setOptions($("#languageFilter"), languages, "全部语言");
+  setOptions($("#resourceTypeFilter"), resourceTypes, "全部资源");
+  setOptions($("#yearFilter"), years, "全部年份");
+}
+
 function renderMetrics() {
   const stats = state.payload.stats;
   const languageCounts = new Map((stats.languages || []).map(row => [row.name, row.count]));
   const chineseCount = languageCounts.get("中文") || 0;
   const foreignCount = stats.total - chineseCount;
   const translatedCount = stats.translatedTitles || 0;
-  const detailClassified = state.papers.filter(paper => paper.detailTerms?.length).length;
+  const detailClassified = stats.detailClassified ?? state.papers.filter(paper => paper.detailTerms?.length).length;
   const coverage = stats.total ? Math.round(detailClassified / stats.total * 100) : 0;
   $("#metricTotal").textContent = stats.total.toLocaleString("zh-CN");
   $("#metricChinese").textContent = chineseCount.toLocaleString("zh-CN");
@@ -48,7 +60,9 @@ function renderMetrics() {
   $("#metricTranslated").textContent = translatedCount.toLocaleString("zh-CN");
   $("#metricCoverage").textContent = `${coverage}%`;
   $("#coverageBar").style.width = `${coverage}%`;
-  $("#dataState").textContent = stats.total ? `${stats.total.toLocaleString("zh-CN")} 条真实题录` : "等待知网导出数据";
+  $("#dataState").textContent = stats.total
+    ? `${stats.total.toLocaleString("zh-CN")} 条真实题录${state.loadingAll ? "（正在加载）" : ""}`
+    : "等待知网导出数据";
   $("#coverageNote").innerHTML = stats.total
     ? `<strong>当前数据范围</strong><span>中文 ${chineseCount.toLocaleString("zh-CN")} 篇；外文 ${foreignCount.toLocaleString("zh-CN")} 篇，其中 ${translatedCount.toLocaleString("zh-CN")} 篇保留英文原题并附中文译名；${detailClassified.toLocaleString("zh-CN")} 篇已命中详细词汇。</span>`
     : `<strong>当前为空库</strong><span>未放入知网官方导出文件；页面不会用示例论文替代真实题录。</span>`;
@@ -307,32 +321,55 @@ function bindEvents() {
   $("#paperDialog").addEventListener("click", event => { if (event.target === $("#paperDialog")) $("#paperDialog").close(); });
 }
 
+async function loadChunk(file) {
+  const response = await fetch(`/data/${file}`, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`HTTP ${response.status} (${file})`);
+  return response.json();
+}
+
+function yieldToBrowser() {
+  return new Promise(resolve => {
+    if ("requestIdleCallback" in window) window.requestIdleCallback(resolve, { timeout: 100 });
+    else setTimeout(resolve, 0);
+  });
+}
+
+async function loadRemainingChunks(files) {
+  for (const file of files) {
+    const chunk = await loadChunk(file);
+    state.papers.push(...chunk);
+    if (state.query || state.direction || state.toc !== "all" || state.confidence.size || state.source || state.language || state.resourceType || state.year) applyFilters();
+    await yieldToBrowser();
+  }
+  state.loadingAll = false;
+  updateFilterOptions();
+  renderMetrics();
+  renderDirectionNav();
+  applyFilters();
+}
+
 async function init() {
   try {
     const index = await fetch("/data/library-index.json", { cache: "no-store" }).then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     });
-    const chunks = await Promise.all((index.paperChunks || []).map(file => fetch(`/data/${file}`, { cache: "no-store" }).then(response => {
-      if (!response.ok) throw new Error(`HTTP ${response.status} (${file})`);
-      return response.json();
-    })));
-    state.payload = { ...index, papers: chunks.flat() };
-    state.papers = state.payload.papers || [];
-    const sources = [...new Set(state.papers.map(paper => paper.source).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
-    const languages = [...new Set(state.papers.map(paper => paper.language).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
-    const resourceTypes = [...new Set(state.papers.map(paper => paper.resourceType || paper.database).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
-    const years = [...new Set(state.papers.map(paper => paper.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
-    setOptions($("#sourceFilter"), sources, "全部来源");
-    setOptions($("#languageFilter"), languages, "全部语言");
-    setOptions($("#resourceTypeFilter"), resourceTypes, "全部资源");
-    setOptions($("#yearFilter"), years, "全部年份");
+    const files = index.paperChunks || [];
+    const firstChunk = files.length ? await loadChunk(files[0]) : [];
+    state.payload = { ...index, papers: firstChunk };
+    state.papers = firstChunk;
+    state.loadingAll = files.length > 1;
+    updateFilterOptions();
     renderMetrics();
     syncAxisButtons();
     renderDirectionNav();
     bindEvents();
     applyFilters();
     refreshIcons();
+    if (state.loadingAll) loadRemainingChunks(files.slice(1)).catch(error => {
+      state.loadingAll = false;
+      $("#dataState").textContent = `部分数据加载失败：${error.message}`;
+    });
   } catch (error) {
     $("#dataState").textContent = "数据读取失败";
     $("#coverageNote").innerHTML = `<strong>构建失败</strong><span>${escapeHtml(error.message)}</span>`;

@@ -37,9 +37,15 @@ const server = http.createServer(async (request, response) => {
     const extension = path.extname(target);
     const acceptsGzip = /(?:^|,)\s*gzip\s*(?:,|$)/i.test(request.headers["accept-encoding"] || "");
     const compressible = new Set([".html", ".css", ".js", ".json", ".csv"]);
+    const isPaperChunk = /^\/data\/papers-\d+\.json$/.test(url.pathname);
+    const cacheControl = isPaperChunk || url.pathname === "/data/zebrafish-literature.csv"
+      ? "public, max-age=3600"
+      : extension === ".css" || extension === ".js"
+        ? "public, max-age=86400"
+        : "no-cache";
     const headers = {
       "Content-Type": mime[extension] || "application/octet-stream",
-      "Cache-Control": "no-store",
+      "Cache-Control": cacheControl,
       "Vary": "Accept-Encoding"
     };
     await fs.access(target);
