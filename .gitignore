@@ -1,0 +1,15 @@
+node_modules/
+
+# Local runtime and temporary tunnel files
+data/public-runtime/
+*.log
+
+# Local source archives and full-text files are not needed by the public site.
+data/raw/
+data/archive/
+data/pdfs/
+data/metadata.json
+data/translations-en-zh.json
+data/toc.json
+
+# Keep generated public/data files in Git so Render can serve the site directly.

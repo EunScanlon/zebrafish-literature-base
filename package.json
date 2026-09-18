@@ -1,0 +1,17 @@
+{
+  "name": "zebrafish-cnki-literature-base",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "node scripts/import-cnki.mjs data/raw --out data/metadata.json",
+    "collect:receive": "node scripts/cnki-receiver.mjs",
+    "translate": "node scripts/translate-titles.mjs",
+    "toc": "node scripts/run-toc.mjs",
+    "build": "node scripts/build-data.mjs",
+    "pipeline": "npm run import && npm run toc && npm run build",
+    "start": "node server.mjs",
+    "start:public": "node server.mjs --skip-data-build",
+    "check": "node scripts/check-data.mjs",
+    "test:classifier": "node scripts/test-classifier.mjs"
+  }
+}

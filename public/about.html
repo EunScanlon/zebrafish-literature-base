@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="author" content="105教研室">
+  <meta name="description" content="105教研室斑马鱼文献库简介、作者与版权信息">
+  <title>关于本站 · 105教研室</title>
+  <link rel="stylesheet" href="/styles.css?v=20260917-2">
+  <link rel="stylesheet" href="/about.css?v=20260917-1">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+</head>
+<body class="about-page">
+  <header class="topbar about-topbar">
+    <div class="brand-media" aria-hidden="true"></div>
+    <div class="brand-block">
+      <div class="brand-mark">ZF</div>
+      <div>
+        <h1>105教研室</h1>
+        <p>斑马鱼文献库 · 关于本站</p>
+      </div>
+    </div>
+    <a class="about-link" href="./" title="返回文献库" aria-label="返回文献库"><i data-lucide="arrow-left" aria-hidden="true"></i><span>返回文献库</span></a>
+  </header>
+
+  <main class="about-main">
+    <section class="about-hero">
+      <div class="about-profile">
+        <img class="author-avatar" src="/assets/author-105.jpg" alt="105教研室作者头像">
+        <div>
+          <span class="eyebrow">AUTHOR / MAINTAINER</span>
+          <h2>105教研室</h2>
+          <p class="about-lede">面向斑马鱼研究的中英文文献整理与研究方向索引。</p>
+        </div>
+      </div>
+      <div class="about-ownership"><span>版权</span><strong>105教研室</strong><small>© 2026 105教研室</small></div>
+    </section>
+
+    <section class="about-grid">
+      <article class="about-section about-section-wide">
+        <span class="eyebrow">ABOUT THIS SITE</span>
+        <h2>关于这个网站</h2>
+        <p>这是一个面向学习、科研选题和文献综述的斑马鱼文献索引站。网站把中国知网导出的中文与外文题录集中整理，保留外文原题并附中文译名，再按研究目的、生物系统、细分专题和详细词汇建立可检索的分类体系。</p>
+        <p>它适合用来快速浏览研究版图、定位主题词、比较不同方向的论文题目。网站当前展示的是题录和分类索引，不提供全文下载，也不绕过知网的验证码、登录或访问权限。</p>
+      </article>
+      <article class="about-section">
+        <span class="eyebrow">DATA SCOPE</span>
+        <h2>数据范围</h2>
+        <dl class="about-stats">
+          <div><dt>题录总数</dt><dd id="aboutTotal">读取中</dd></div>
+          <div><dt>中文题录</dt><dd id="aboutChinese">读取中</dd></div>
+          <div><dt>外文题录</dt><dd id="aboutForeign">读取中</dd></div>
+          <div><dt>详细词汇</dt><dd id="aboutTerms">读取中</dd></div>
+        </dl>
+      </article>
+      <article class="about-section">
+        <span class="eyebrow">CLASSIFICATION</span>
+        <h2>分类方法</h2>
+        <ul class="about-list">
+          <li>一级：研究目的</li>
+          <li>二级：生物系统</li>
+          <li>三级：细分专题</li>
+          <li>四级：中英文详细词汇</li>
+        </ul>
+      </article>
+      <article class="about-section about-section-wide about-note">
+        <span class="eyebrow">COPYRIGHT &amp; CONTACT</span>
+        <h2>版权与使用说明</h2>
+        <p><strong>版权归 105教研室所有。</strong>站内整理的题名、来源及其他书目信息以合法获得的知网导出内容为基础，具体文献权利归原作者、出版机构及相关权利人所有。转载或公开部署时，请同时遵守数据来源平台的使用规范。</p>
+      </article>
+    </section>
+  </main>
+
+  <footer><strong>© 2026 105教研室</strong> · 斑马鱼文献库</footer>
+  <script type="module">
+    window.lucide?.createIcons();
+    fetch('/data/library-index.json', { cache: 'no-store' }).then(response => response.json()).then(payload => {
+      const languageCounts = new Map((payload.stats.languages || []).map(row => [row.name, row.count]));
+      const values = {
+        aboutTotal: payload.stats.total,
+        aboutChinese: languageCounts.get('中文') || 0,
+        aboutForeign: payload.stats.total - (languageCounts.get('中文') || 0),
+        aboutTerms: (payload.classificationSchema?.terms || []).length
+      };
+      for (const [id, value] of Object.entries(values)) document.getElementById(id).textContent = Number(value).toLocaleString('zh-CN');
+    }).catch(() => {});
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="author" content="105教研室">
+  <meta name="description" content="105教研室斑马鱼中英文文献库与研究方向索引">
+  <title>105教研室 · 斑马鱼文献库</title>
+  <link rel="stylesheet" href="/styles.css?v=20260917-1">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="/app.js?v=20260917-1" type="module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-media" aria-hidden="true"></div>
+    <div class="brand-block">
+      <div class="brand-mark">ZF</div>
+      <div>
+        <h1>斑马鱼文献库</h1>
+        <p>105教研室 · 中国知网题录、目录与研究方向索引</p>
+      </div>
+    </div>
+    <a class="about-link" href="./about.html" title="关于本站" aria-label="关于本站"><i data-lucide="circle-user-round" aria-hidden="true"></i><span>关于本站</span></a>
+    <div class="data-state"><span class="state-dot"></span><span id="dataState">正在读取</span></div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-heading">
+        <span>分类导航</span>
+        <button id="clearFilters" class="icon-button" type="button" title="清除筛选" aria-label="清除筛选"><i data-lucide="rotate-ccw"></i></button>
+      </div>
+      <div class="axis-switch" role="tablist" aria-label="分类层级">
+        <button type="button" class="axis-button active" data-axis="purposes">研究目的</button>
+        <button type="button" class="axis-button" data-axis="systems">生物系统</button>
+        <button type="button" class="axis-button" data-axis="subtopics">细分专题</button>
+        <button type="button" class="axis-button" data-axis="terms">详细词汇</button>
+      </div>
+      <label class="taxonomy-filter"><i data-lucide="list-filter" aria-hidden="true"></i><input id="taxonomySearch" type="search" autocomplete="off" placeholder="筛选分类词"></label>
+      <nav id="directionNav" class="direction-nav" aria-label="分类项目"></nav>
+      <div class="sidebar-section">
+        <span class="section-label">目录状态</span>
+        <label><input type="radio" name="toc" value="all" checked> 全部</label>
+        <label><input type="radio" name="toc" value="complete"> 已提取</label>
+        <label><input type="radio" name="toc" value="pending"> 待提取</label>
+      </div>
+      <div class="sidebar-section">
+        <span class="section-label">分类置信度</span>
+        <label><input type="checkbox" class="confidence-filter" value="高"> 高</label>
+        <label><input type="checkbox" class="confidence-filter" value="中"> 中</label>
+        <label><input type="checkbox" class="confidence-filter" value="低"> 低</label>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <section class="query-band">
+        <form id="searchForm" class="search-form">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="搜索题名、摘要、关键词或目录标题">
+          <button type="submit" class="primary-button"><i data-lucide="arrow-right"></i><span>检索</span></button>
+        </form>
+      </section>
+
+      <section class="metrics" aria-label="数据概览">
+        <div><span>题录</span><strong id="metricTotal">0</strong></div>
+        <div><span>中文题录</span><strong id="metricChinese">0</strong></div>
+        <div><span>外文题录</span><strong id="metricForeign">0</strong></div>
+        <div><span>英文中文译名</span><strong id="metricTranslated">0</strong></div>
+        <div class="metric-progress"><span>详细词汇分类覆盖</span><strong id="metricCoverage">0%</strong><div class="progress-track"><span id="coverageBar"></span></div></div>
+      </section>
+
+      <section id="coverageNote" class="coverage-note" aria-live="polite"></section>
+
+      <section class="content-region">
+        <div class="view-bar">
+          <div class="tabs" role="tablist">
+            <button class="tab active" type="button" data-view="papers" role="tab">论文索引</button>
+            <button class="tab" type="button" data-view="directions" role="tab">分类图谱</button>
+            <button class="tab" type="button" data-view="toc" role="tab">目录队列</button>
+          </div>
+          <div class="toolbar">
+            <span id="resultCount">0 篇</span>
+            <select id="languageFilter" aria-label="语言筛选"><option value="">全部语言</option></select>
+            <select id="resourceTypeFilter" aria-label="资源类型筛选"><option value="">全部资源</option></select>
+            <select id="sourceFilter" aria-label="来源筛选"><option value="">全部来源</option></select>
+            <select id="yearFilter" aria-label="年份筛选"><option value="">全部年份</option></select>
+            <select id="sortMode" aria-label="排序方式">
+              <option value="relevance">匹配度</option>
+              <option value="year">年份</option>
+              <option value="citations">被引量</option>
+            </select>
+            <a class="icon-button" href="/data/zebrafish-literature.csv" download title="导出当前数据" aria-label="导出当前数据"><i data-lucide="download"></i></a>
+          </div>
+        </div>
+
+        <div id="papersView"></div>
+        <div id="directionsView" hidden></div>
+        <div id="tocView" hidden></div>
+
+        <div id="pager" class="pager" hidden>
+          <button id="prevPage" class="icon-button" type="button" title="上一页" aria-label="上一页"><i data-lucide="chevron-left"></i></button>
+          <span id="pageStatus">1 / 1</span>
+          <button id="nextPage" class="icon-button" type="button" title="下一页" aria-label="下一页"><i data-lucide="chevron-right"></i></button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="paperDialog" class="paper-dialog">
+    <div class="dialog-header">
+      <div><span id="dialogMeta" class="eyebrow"></span><h2 id="dialogTitle"></h2></div>
+      <button id="closeDialog" class="icon-button" type="button" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button>
+    </div>
+    <div id="dialogBody" class="dialog-body"></div>
+  </dialog>
+
+  <footer><strong>© 2026 105教研室</strong> · 斑马鱼图片：<a href="https://commons.wikimedia.org/wiki/File:Leopard_danio_(cropped).jpg" target="_blank" rel="noreferrer">Roundish，CC0，Wikimedia Commons</a></footer>
+</body>
+</html>
