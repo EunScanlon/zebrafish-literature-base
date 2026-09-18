@@ -82,7 +82,7 @@ function renderDirectionNav() {
     .map(item => ({ ...item, count: counts.get(item.key || item.name) || 0 }))
     .filter(item => !navQuery || [item.name, item.topic, item.parent, ...(item.aliases || [])].join(" ").toLowerCase().includes(navQuery));
   $("#directionNav").innerHTML = [
-    `<button type="button" class="direction-button ${state.direction ? "" : "active"}" data-direction=""><span>${config.all}</span><span>${state.papers.length}</span></button>`,
+    `<button type="button" class="direction-button ${state.direction ? "" : "active"}" data-direction=""><span>${config.all}</span><span>${state.payload.stats.total.toLocaleString("zh-CN")}</span></button>`,
     ...rows.map(row => {
       const key = row.key || row.name;
       const context = state.axis === "terms" ? row.topic : "";
