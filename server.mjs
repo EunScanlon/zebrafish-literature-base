@@ -96,8 +96,13 @@ const server = http.createServer(async (request, response) => {
       return writeJson(response, 200, { ok: true }, { "Set-Cookie": `${authCookieName}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax` });
     }
     if (!isAuthorized(request)) {
-      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/about.html")) return redirectToLogin(response, `${url.pathname}${url.search}`);
-      return writeJson(response, 401, { error: "authentication_required" });
+      if (request.method === "GET" && url.pathname === "/login.html") {
+        // The login form must remain public so an unauthenticated visitor can authenticate.
+      } else if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/about.html")) {
+        return redirectToLogin(response, `${url.pathname}${url.search}`);
+      } else {
+        return writeJson(response, 401, { error: "authentication_required" });
+      }
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
     const target = path.resolve(publicDir, `.${decodeURIComponent(requested)}`);
