@@ -9,7 +9,7 @@
     "toc": "node scripts/run-toc.mjs",
     "build": "node scripts/build-data.mjs",
     "pipeline": "npm run import && npm run toc && npm run build",
-    "start": "node server.mjs",
+    "start": "node server.mjs --skip-data-build",
     "start:public": "node server.mjs --skip-data-build",
     "check": "node scripts/check-data.mjs",
     "test:classifier": "node scripts/test-classifier.mjs"
